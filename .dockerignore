@@ -1,0 +1,13 @@
+frontend/
+.git/
+node_modules/
+.env
+.env.local
+*.db
+*.sqlite3
+*.log
+__pycache__/
+*.pyc
+.next/
+.idea/
+.vscode/

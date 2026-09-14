@@ -2,7 +2,7 @@ services:
   - type: web
     name: welfare-backend
     runtime: python
-    buildCommand: "bash build.sh"
+    buildCommand: "pip install -r requirements.txt && cd backend && python -c \"from app.db.base import Base; from app.db.session import engine; Base.metadata.create_all(bind=engine)\" && python seed.py"
     startCommand: "cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: DATABASE_URL
@@ -11,7 +11,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: BACKEND_CORS_ORIGINS
-        value: "https://welfare-frontend.onrender.com,http://localhost:3000"
+        value: "*"
       - key: UPLOAD_DIR
         value: "uploads"
       - key: SEED_ADMIN_EMAIL
