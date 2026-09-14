@@ -32,13 +32,10 @@ def create_app() -> FastAPI:
     async def rate_limit_handler(_: Request, exc: RateLimitExceeded) -> JSONResponse:
         return JSONResponse(status_code=429, content={"detail": "Too many requests, slow down."})
 
-    origins = settings.cors_origins
-    use_wildcard = origins == ["*"]
-
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=origins if not use_wildcard else ["*"],
-        allow_credentials=not use_wildcard,
+        allow_origins=settings.cors_origins,
+        allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )

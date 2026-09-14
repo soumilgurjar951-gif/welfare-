@@ -32,7 +32,7 @@ services:
     startCommand: "npm start"
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        value: "https://welfare--1.onrender.com"
+        value: "https://welfare-2.onrender.com"
       - key: NODE_ENV
         value: "production"
     autoDeploy: true
