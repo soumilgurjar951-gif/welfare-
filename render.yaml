@@ -23,3 +23,16 @@ services:
         value: "9000000001"
     healthCheckPath: /health
     autoDeploy: true
+
+  - type: web
+    name: welfare-frontend
+    runtime: node
+    rootDir: frontend
+    buildCommand: "npm install && npm run build"
+    startCommand: "npm start"
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: "https://welfare--1.onrender.com"
+      - key: NODE_ENV
+        value: "production"
+    autoDeploy: true
