@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ShieldCheck } from "lucide-react";
-import { ApiError } from "@/lib/api";
+import { ApiError, API_BASE } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { adminLoginSchema, type AdminLoginInput } from "@/lib/validations";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,7 @@ export default function AdminLoginPage() {
       const msg = e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Admin login failed.";
       // Surface CORS/network hints helpfully
       if (/Failed to fetch|Load failed|NetworkError|CORS/i.test(msg)) {
-        setServerError(`Cannot reach API at ${process.env.NEXT_PUBLIC_API_URL ?? "backend"}. Is the backend running and CORS allowed? (${msg})`);
+        setServerError(`Cannot reach API at ${API_BASE}. Is the backend running and CORS allowed? (${msg})`);
       } else {
         setServerError(msg);
       }
