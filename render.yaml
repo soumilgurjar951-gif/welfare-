@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: welfare-backend
+    runtime: python
+    buildCommand: "bash build.sh"
+    startCommand: "cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+        value: "sqlite:///./scheme_sync.db"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: BACKEND_CORS_ORIGINS
+        value: "https://welfare-frontend.onrender.com,http://localhost:3000"
+      - key: UPLOAD_DIR
+        value: "uploads"
+      - key: SEED_ADMIN_EMAIL
+        value: "admin@gov.in"
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
+        value: "Admin@123"
+      - key: SEED_ADMIN_PHONE
+        value: "9000000001"
+    healthCheckPath: /health
+    autoDeploy: true
