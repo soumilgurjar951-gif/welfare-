@@ -1,7 +1,8 @@
 /** Typed API client for the Scheme Sync FastAPI backend. */
 
-export const API_BASE =
-  (process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000").replace(/\/$/, "");
+const _rawBase = (process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000").replace(/\/$/, "");
+// Auto-migrate old welfare--1 URL → welfare-2 (backend was recreated on Render)
+export const API_BASE = _rawBase.replace("welfare--1.onrender.com", "welfare-2.onrender.com");
 
 export class ApiError extends Error {
   status: number;
