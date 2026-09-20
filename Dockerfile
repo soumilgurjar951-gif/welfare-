@@ -23,4 +23,4 @@ ENV SEED_ADMIN_PHONE=9000000001
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "cd backend && python -c \"from app.db.base import Base; from app.db.session import engine; Base.metadata.create_all(bind=engine)\" && python seed.py && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT"]
+CMD ["sh", "-c", "cd backend && python -c \"from app.db.base import Base; from app.db.session import engine; Base.metadata.create_all(bind=engine)\" && python seed.py && python seed_demo.py && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT"]
