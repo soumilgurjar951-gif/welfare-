@@ -3,7 +3,7 @@
 import enum
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Enum, Index, String, func
+from sqlalchemy import Boolean, Date, DateTime, Enum, Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -11,7 +11,20 @@ from app.db.base import Base
 
 class UserRole(str, enum.Enum):
     citizen = "citizen"
-    admin = "admin"
+    admin = "admin"  # legacy super-officer; kept for backward compatibility
+    welfare_officer = "welfare_officer"
+    collector = "collector"
+    data_officer = "data_officer"
+    auditor = "auditor"
+    sys_admin = "sys_admin"
+    hospital_partner = "hospital_partner"
+
+
+OFFICER_ROLES: set[str] = {"admin", "welfare_officer", "collector", "sys_admin"}
+"""Roles allowed to verify/flag gap cases (PRD mandatory human-in-the-loop)."""
+
+READ_ROLES: set[str] = OFFICER_ROLES | {"data_officer", "auditor"}
+"""Read-only roles may list cases/analytics but never decide."""
 
 
 class IdType(str, enum.Enum):
@@ -41,6 +54,11 @@ class User(Base):
 
     role: Mapped[UserRole] = mapped_column(Enum(UserRole), nullable=False, default=UserRole.citizen)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    # TOTP-based MFA for officer roles (CERT-In control: MFA for all admins).
+    # Secret is stored server-side only; citizens never see an MFA flow.
+    mfa_secret: Mapped[str | None] = mapped_column(String(64), nullable=True, default=None)
+    mfa_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
 

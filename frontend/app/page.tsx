@@ -1,241 +1,200 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
-  ClipboardCheck,
-  FileText,
-  Landmark,
   ShieldCheck,
   Sparkles,
-  Bot,
-  CheckCircle2,
-  TrendingUp,
-  Users,
-  Award,
-  Search,
-  Banknote,
-  FileCheck,
+  Link2,
+  TriangleAlert,
+  ListOrdered,
+  Database,
+  ScanSearch,
+  UserCheck,
+  Landmark,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { api } from "@/lib/api";
 
-const stats = [
-  { label: "Active Welfare Schemes", value: "10+", icon: Landmark },
-  { label: "Direct Benefit Transfer", value: "₹2.5L Max", icon: TrendingUp },
-  { label: "Verified Beneficiaries", value: "100%", icon: ShieldCheck },
-  { label: "AI Assistance Languages", value: "8 Languages", icon: Bot },
-];
+/** Officer-only public landing — PPT-aligned messaging for "Welfare Gap AI". */
 
-const featuredSchemes = [
+const pillars = [
   {
-    title: "Pradhan Mantri Awas Yojana (PMAY)",
-    category: "Housing Support",
-    benefit: "Financial assistance up to ₹2,50,000 for constructing a pucca house.",
-    tag: "High Priority",
-    color: "from-blue-600 to-indigo-600",
+    icon: ScanSearch,
+    title: "Missed-Beneficiary Detection",
+    text: "Identifies eligible citizens who are not receiving the benefits they are entitled to.",
   },
   {
-    title: "PM-Kisan Samman Nidhi",
-    category: "Agriculture & Farmers",
-    benefit: "₹6,000 per year direct income support transferred in 3 equal installments.",
-    tag: "Direct Cash Transfer",
-    color: "from-emerald-600 to-teal-600",
+    icon: Link2,
+    title: "Cross-Department Record Matching",
+    text: "Links fragmented databases — land, citizen registry, bank, scheme records — into one view.",
   },
   {
-    title: "National Social Assistance Pension",
-    category: "Senior & Pension",
-    benefit: "Monthly pension for senior citizens, widows, and persons with disabilities.",
-    tag: "Monthly Income",
-    color: "from-amber-600 to-orange-600",
+    icon: TriangleAlert,
+    title: "Anomaly & Duplicate Detection",
+    text: "Flags duplicate records and suspicious inconsistencies before money goes out.",
   },
   {
-    title: "Post-Matric Scholarship Scheme",
-    category: "Education & Youth",
-    benefit: "Full tuition reimbursement & monthly maintenance allowance for eligible students.",
-    tag: "Education Grant",
-    color: "from-purple-600 to-pink-600",
+    icon: ListOrdered,
+    title: "Priority-Based Verification",
+    text: "Officers see high-priority cases first, scored 0–100 with evidence attached.",
   },
 ];
 
-const steps = [
+const flow = [
   {
-    icon: FileText,
+    icon: Database,
     step: "Step 1",
-    title: "Register with Gov ID",
-    text: "Sign up securely using Aadhaar (masked), Voter ID, PAN, or Driving License. Data is fully encrypted.",
+    title: "Data Integration",
+    text: "Departmental CSV / API records — land, citizens, bank, schemes — loaded into one layer.",
   },
   {
-    icon: ClipboardCheck,
+    icon: ScanSearch,
     step: "Step 2",
-    title: "Apply & Upload Docs",
-    text: "Browse welfare schemes, check eligibility, write application reason, and attach income/land proofs.",
+    title: "AI Matching & Gap Detection",
+    text: "Rules + models match eligibility against enrolment and flag who the system missed.",
   },
   {
-    icon: ShieldCheck,
+    icon: UserCheck,
     step: "Step 3",
-    title: "Officer Verification & Benefit",
-    text: "Officers inspect applications, record audit logs, and approve direct benefit transfers directly to your bank.",
+    title: "Officer Verification",
+    text: "AI only flags — officers verify, request info, or mark false positives. Humans decide.",
+  },
+  {
+    icon: Landmark,
+    step: "Step 4",
+    title: "Government Closes the Gap",
+    text: "Verified cases become action memoranda with QR tracking codes — benefits reach citizens.",
   },
 ];
 
-export default function LandingPage() {
-  const [live, setLive] = useState<{ total_applications: number; approved: number; total_disbursed: number; active_schemes: number } | null>(null);
-  useEffect(() => {
-    api.publicStats().then(setLive).catch(()=>{});
-  }, []);
+const impact: [string, number, number, string][] = [
+  ["Beneficiaries identified", 22, 88, "%"],
+  ["Verification speed index", 20, 82, ""],
+  ["Duplicate detection accuracy", 41, 93, "%"],
+  ["Scheme coverage visibility", 46, 90, "%"],
+  ["Manual effort required", 100, 35, "%"],
+];
+
+const trust = [
+  "Role-based access (7 officer roles, least privilege)",
+  "Aadhaar stored hashed + masked only — never raw",
+  "TOTP two-factor login for all officers",
+  "Append-only hash-chained audit trail",
+  "Human-in-the-loop: AI flags, officers decide",
+];
+
+export default function Home() {
   return (
     <div className="space-y-16 pb-16">
-      {/* Modern Hero Section */}
-      <section className="gov-stripe relative overflow-hidden text-white pt-16 pb-24 md:pt-24 md:pb-32">
+      {/* ── P0: PPT Hero ── */}
+      <section className="gov-stripe relative overflow-hidden text-white pt-16 pb-20 md:pt-24 md:pb-28">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-500/20 via-transparent to-transparent pointer-events-none" />
-        <div className="mx-auto flex max-w-6xl flex-col items-center text-center px-4 relative z-10 space-y-8">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-xs font-semibold backdrop-blur animate-fade-in">
+        <div className="mx-auto flex max-w-6xl flex-col items-center text-center px-4 relative z-10 space-y-7">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-xs font-semibold backdrop-blur">
             <Sparkles size={14} className="text-amber-300" />
-            <span>National Digital Welfare Gateway</span>
+            <span>AI-Powered Welfare Gap Detection</span>
           </div>
 
-          <h1 className="max-w-4xl text-4xl font-extrabold tracking-tight md:text-6xl lg:text-7xl leading-tight">
-            Empowering Citizens with Direct <span className="bg-gradient-to-r from-sky-300 via-indigo-200 to-emerald-300 bg-clip-text text-transparent">Welfare Benefits</span>
+          <h1 className="max-w-4xl text-4xl font-extrabold tracking-tight md:text-6xl leading-tight">
+            Welfare Gap AI{" "}
+            <span className="bg-gradient-to-r from-sky-300 via-indigo-200 to-emerald-300 bg-clip-text text-transparent">
+              — Finding Citizens the System Misses
+            </span>
           </h1>
 
-          <p className="max-w-2xl text-base md:text-lg text-slate-200 font-normal leading-relaxed">
-            Apply for government housing, farming, pension, and scholarship schemes seamlessly.
-            Get instant eligibility assistance in 8 Indian languages with our smart AI chatbot.
+          <p className="max-w-3xl text-base md:text-lg text-slate-200 font-normal leading-relaxed">
+            An AI-powered welfare intelligence layer that analyzes fragmented government
+            data to identify eligible citizens who may be missing expected welfare benefits.
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-            <Link href="/register">
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-1">
+            <Link href="/admin/dashboard">
               <Button size="lg" className="bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white font-semibold shadow-lg shadow-indigo-500/30 border border-white/20 gap-2 px-6">
-                Register as Citizen <ArrowRight size={18} />
+                For Officers → Gap Detection Dashboard <ArrowRight size={18} />
               </Button>
             </Link>
-            <Link href="/schemes">
-              <Button size="lg" variant="outline" className="border-white/30 bg-white/10 text-white hover:bg-white/20 backdrop-blur font-semibold px-6 gap-2">
-                <Search size={16} /> Explore All Schemes
+            <a href="#how-it-works">
+              <Button size="lg" variant="outline" className="border-white/30 bg-white/10 text-white hover:bg-white/20 backdrop-blur font-semibold px-6">
+                See how it works
               </Button>
-            </Link>
+            </a>
           </div>
 
-          {/* Quick AI Assistant Highlight Pill */}
-          <div className="mt-6 flex items-center gap-3 rounded-2xl border border-indigo-300/30 bg-indigo-950/60 p-3.5 backdrop-blur max-w-lg text-left">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white">
-              <Bot size={20} />
-            </div>
-            <div className="text-xs">
-              <p className="font-bold text-white flex items-center gap-1.5">
-                AI Scheme Assistant Ready 🤖
-                <span className="rounded bg-emerald-500/20 px-1.5 py-0.2 text-[10px] text-emerald-300 border border-emerald-400/30">8 Languages</span>
-              </p>
-              <p className="text-slate-300">Click the bottom-right assistant icon to ask questions in Hindi, Marathi, Tamil, Telugu & more!</p>
-            </div>
-          </div>
+          <p className="text-xs text-slate-300 font-medium tracking-wide">
+            Right Benefit • Right Person • Right Time
+          </p>
         </div>
       </section>
 
-      {/* Metrics & Key Stats Bar */}
+      {/* ── Core loop strip ── */}
       <section className="mx-auto max-w-6xl px-4 -mt-14 relative z-20">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 rounded-2xl bg-white p-4 sm:p-6 shadow-xl border border-slate-200/80">
-          {stats.map((s, idx) => {
-            const Icon = s.icon;
+        <div className="rounded-2xl bg-white p-4 sm:p-5 shadow-xl border border-slate-200/80 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center">
+          {["AI Finds the Gap", "Officer Verifies", "Government Closes the Gap"].map((t, i) => (
+            <div key={t} className="flex items-center gap-2 sm:gap-4">
+              {i > 0 && <ArrowRight size={16} className="text-indigo-500 hidden sm:block" />}
+              <span className={`rounded-full px-4 py-1.5 text-xs sm:text-sm font-extrabold ${
+                i === 1 ? "bg-indigo-600 text-white shadow" : "bg-indigo-50 text-indigo-700"}`}>
+                {t}
+              </span>
+            </div>
+          ))}
+        </div>
+        <p className="text-center text-xs text-slate-500 mt-3 font-semibold">
+          AI only flags — officers decide. Human-in-the-loop, always.
+        </p>
+      </section>
+
+      {/* ── P2: Problem statement (SIH26129, short) ── */}
+      <section className="mx-auto max-w-6xl px-4">
+        <div className="rounded-2xl border border-red-100 bg-gradient-to-r from-red-50/80 via-white to-amber-50/80 p-5 sm:p-7 shadow-sm">
+          <span className="text-xs font-bold uppercase tracking-wider text-red-600">The Problem</span>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mt-1">
+            Fragmented systems leave eligible citizens behind
+          </h2>
+          <p className="text-sm text-slate-600 leading-relaxed mt-3 max-w-3xl">
+            Land records live in one department, citizen registries in another, bank and
+            scheme data somewhere else. With no common view, eligible families silently
+            miss the benefits meant for them — discovered only during manual drives, if at all.
+            Welfare Gap AI joins these fragments and surfaces every missed citizen with evidence,
+            so no one the system owes is left invisible.
+          </p>
+        </div>
+      </section>
+
+      {/* ── P1: PPT 4 pillars ── */}
+      <section className="mx-auto max-w-6xl px-4 space-y-8">
+        <div className="text-center space-y-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">What it does</span>
+          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Four pillars of gap intelligence</h2>
+        </div>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {pillars.map((p, idx) => {
+            const Icon = p.icon;
             return (
-              <div key={idx} className="flex items-center gap-2.5 sm:gap-3.5 p-1 sm:p-2">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-                  <Icon size={22} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-lg sm:text-2xl font-bold text-slate-900 tracking-tight leading-none">{s.value}</p>
-                  <p className="text-[10px] sm:text-xs text-slate-500 font-medium leading-tight mt-0.5">{s.label}</p>
-                </div>
-              </div>
+              <Card key={idx} className="border border-slate-200/80 bg-white shadow-sm hover:shadow-md transition">
+                <CardHeader className="space-y-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-200">
+                    <Icon size={24} />
+                  </div>
+                  <CardTitle className="text-base font-bold text-slate-900">{p.title}</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-slate-600 leading-relaxed pt-0">{p.text}</CardContent>
+              </Card>
             );
           })}
         </div>
       </section>
 
-      {/* Live Transparency — benefits citizen (trust) + govt (showcase) */}
-      <section className="mx-auto max-w-6xl px-4">
-        <div className="rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-50/80 via-white to-teal-50/80 p-5 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-white"><FileCheck size={16} /></span>
-              <div>
-                <p className="text-sm font-bold text-slate-900">Live Transparency — Direct Benefit Transfer</p>
-                <p className="text-xs text-slate-600">Citizen benefit: every application traceable • Govt benefit: real-time disbursement audit.</p>
-              </div>
-            </div>
-            <span className="hidden sm:inline text-xs font-semibold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">Updated live from DB</span>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
-            {[
-              { label: "Active Schemes", value: live ? live.active_schemes : "5+", sub: "Govt approved" },
-              { label: "Applications Received", value: live ? live.total_applications.toLocaleString("en-IN") : "—", sub: "Total volume" },
-              { label: "Beneficiaries Approved", value: live ? live.approved.toLocaleString("en-IN") : "—", sub: "Sanctioned" },
-              { label: "Total Disbursed", value: live ? `₹${Number(live.total_disbursed).toLocaleString("en-IN")}` : "—", sub: "Direct to bank" },
-            ].map((c,i)=>(
-              <div key={i} className="rounded-xl bg-white border border-slate-200 p-3.5">
-                <p className="text-lg font-extrabold text-slate-900">{c.value}</p>
-                <p className="text-xs font-semibold text-slate-700">{c.label}</p>
-                <p className="text-[11px] text-slate-500">{c.sub}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Schemes Grid */}
-      <section className="mx-auto max-w-6xl px-4 space-y-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">Available Support</span>
-            <h2 className="text-3xl font-bold text-slate-900 tracking-tight mt-1">Featured Welfare Schemes</h2>
-          </div>
-          <Link href="/schemes" className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition">
-            View All Schemes <ArrowRight size={16} />
-          </Link>
-        </div>
-
-        <div className="grid gap-6 sm:grid-cols-2">
-          {featuredSchemes.map((fs, idx) => (
-            <Card key={idx} className="group overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-lg transition-all duration-300">
-              <div className={`h-2 bg-gradient-to-r ${fs.color}`} />
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                    {fs.category}
-                  </span>
-                  <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-700">
-                    {fs.tag}
-                  </span>
-                </div>
-                <CardTitle className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition mt-2">
-                  {fs.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-slate-600 leading-relaxed">{fs.benefit}</p>
-                <Link href="/schemes" className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 group-hover:translate-x-1 transition">
-                  Apply Now <ArrowRight size={14} />
-                </Link>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      {/* How It Works Timeline */}
-      <section className="bg-slate-100/70 py-16 border-y border-slate-200/80">
+      {/* ── P2: How it works ── */}
+      <section id="how-it-works" className="bg-slate-100/70 py-16 border-y border-slate-200/80 scroll-mt-16">
         <div className="mx-auto max-w-6xl px-4 space-y-12">
           <div className="text-center space-y-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">Simple Process</span>
-            <h2 className="text-3xl font-bold text-slate-900 tracking-tight">How Scheme Sync Works</h2>
-            <p className="text-sm text-slate-600 max-w-xl mx-auto">Get your government scheme benefit in 3 quick transparent steps.</p>
+            <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">End to end</span>
+            <h2 className="text-3xl font-bold text-slate-900 tracking-tight">How it works</h2>
+            <p className="text-sm text-slate-600 max-w-xl mx-auto">Data Integration → AI Matching → Gap Detection → Officer Action.</p>
           </div>
-
-          <div className="grid gap-6 md:grid-cols-3">
-            {steps.map((s, idx) => {
+          <div className="grid gap-6 md:grid-cols-4">
+            {flow.map((s, idx) => {
               const Icon = s.icon;
               return (
                 <Card key={idx} className="relative border border-slate-200/80 bg-white shadow-sm hover:shadow-md transition">
@@ -246,9 +205,9 @@ export default function LandingPage() {
                       </div>
                       <span className="font-mono text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md">{s.step}</span>
                     </div>
-                    <CardTitle className="text-lg font-bold text-slate-900">{s.title}</CardTitle>
+                    <CardTitle className="text-base font-bold text-slate-900">{s.title}</CardTitle>
                   </CardHeader>
-                  <CardContent className="text-sm text-slate-600 leading-relaxed">{s.text}</CardContent>
+                  <CardContent className="text-sm text-slate-600 leading-relaxed pt-0">{s.text}</CardContent>
                 </Card>
               );
             })}
@@ -256,7 +215,70 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── P1: Impact table ── */}
+      <section className="mx-auto max-w-4xl px-4 space-y-6">
+        <div className="text-center space-y-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">Why it matters</span>
+          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Manual process vs Welfare Gap AI</h2>
+        </div>
+        <Card>
+          <CardContent className="p-0 overflow-x-auto">
+            <table className="w-full min-w-[560px] text-left text-sm">
+              <thead className="border-b text-xs uppercase text-slate-500 bg-slate-50">
+                <tr>
+                  <th className="px-4 py-3">Metric</th>
+                  <th className="px-4 py-3 text-right">Before (Manual)</th>
+                  <th className="px-4 py-3 text-right">After (Welfare Gap AI)</th>
+                  <th className="px-4 py-3 hidden sm:table-cell">Progress</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {impact.map(([label, before, after, unit]) => {
+                  const goodWhenLow = before > after;
+                  const pct = Math.max(4, Math.min(100, after));
+                  return (
+                    <tr key={label} className="hover:bg-slate-50/70">
+                      <td className="px-4 py-3 font-semibold">{label}</td>
+                      <td className="px-4 py-3 text-right text-slate-500">{before}{unit}</td>
+                      <td className={`px-4 py-3 text-right font-extrabold ${goodWhenLow ? "text-indigo-600" : "text-emerald-600"}`}>
+                        {after}{unit}
+                      </td>
+                      <td className="px-4 py-3 hidden sm:table-cell">
+                        <div className="h-2 w-36 rounded-full bg-slate-100 overflow-hidden">
+                          <div className={`h-full rounded-full ${goodWhenLow ? "bg-indigo-500" : "bg-emerald-500"}`} style={{ width: `${pct}%` }} />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+        <p className="text-[11px] text-slate-500 text-center">Representative demo figures illustrating the expected shift from manual drives to AI-assisted verification.</p>
+      </section>
+
+      {/* ── P2: Security & trust ── */}
+      <section className="mx-auto max-w-6xl px-4">
+        <div className="rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50/80 via-white to-sky-50/80 p-5 sm:p-7 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Lock size={18} className="text-indigo-600" />
+            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Secure by design, trusted by officers</h2>
+          </div>
+          <ul className="grid sm:grid-cols-2 gap-x-8 gap-y-2.5 mt-4">
+            {trust.map((t) => (
+              <li key={t} className="flex items-start gap-2 text-sm text-slate-700">
+                <ShieldCheck size={16} className="text-emerald-600 mt-0.5 shrink-0" /> {t}
+              </li>
+            ))}
+          </ul>
+          <div className="mt-5">
+            <Link href="/admin/login">
+              <Button className="gap-2">Open officer workspace <ArrowRight size={16} /></Button>
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
-

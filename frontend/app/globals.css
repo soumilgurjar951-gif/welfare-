@@ -108,6 +108,24 @@ body {
   animation: pulseGlow 3s infinite;
 }
 
+/* Notice ticker (public awareness strip) */
+@keyframes tickerScroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-ticker {
+  animation: tickerScroll 40s linear infinite;
+}
+
+.animate-ticker:hover {
+  animation-play-state: paused;
+}
+
 /* Custom Scrollbar for Chatbot */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;

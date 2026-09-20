@@ -18,6 +18,7 @@ class UserOut(BaseModel):
     address: str
     dob: date
     role: str
+    mfa_enabled: bool = False
     created_at: datetime
 
 

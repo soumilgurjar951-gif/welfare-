@@ -82,3 +82,35 @@ class AdminLoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class AdminLoginResponse(BaseModel):
+    """Officer login may stop at step 1 when the account has MFA enabled."""
+
+    mfa_required: bool = False
+    access_token: str | None = None
+    pre_token: str | None = None
+    token_type: str = "bearer"
+
+
+class MfaSetupOut(BaseModel):
+    otpauth_uri: str
+    manual_secret: str
+    issuer: str = "Scheme Sync"
+
+
+class MfaCodeRequest(BaseModel):
+    code: str = Field(min_length=6, max_length=8)
+
+
+class MfaVerifyRequest(BaseModel):
+    pre_token: str = Field(min_length=10)
+    code: str = Field(min_length=6, max_length=8)
+
+
+class MfaDisableRequest(BaseModel):
+    password: str = Field(min_length=1, max_length=72)
+
+
+class MfaStatusOut(BaseModel):
+    enabled: bool

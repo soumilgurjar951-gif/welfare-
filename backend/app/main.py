@@ -12,7 +12,24 @@ from slowapi.util import get_remote_address
 
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
-from app.routers import admin, applications, auth, notifications, public_stats, schemes, users
+from app.core.middleware import HttpsRedirectMiddleware, SecurityHeadersMiddleware
+from app.routers import (
+    admin,
+    analytics,
+    applications,
+    audit,
+    auth,
+    demo,
+    eligibility,
+    gap_cases,
+    grievances,
+    notifications,
+    public_stats,
+    reports,
+    schemes,
+    users,
+    verify,
+)
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
 
@@ -39,6 +56,9 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    # CERT-In baseline: security headers on every response + HTTPS in prod.
+    app.add_middleware(SecurityHeadersMiddleware)
+    app.add_middleware(HttpsRedirectMiddleware)
 
     register_exception_handlers(app)
 
@@ -50,6 +70,14 @@ def create_app() -> FastAPI:
     app.include_router(admin.router, prefix=prefix)
     app.include_router(notifications.router, prefix=prefix)
     app.include_router(public_stats.router, prefix=prefix)
+    app.include_router(gap_cases.router, prefix=prefix)
+    app.include_router(analytics.router, prefix=prefix)
+    app.include_router(demo.router, prefix=prefix)
+    app.include_router(reports.router, prefix=prefix)
+    app.include_router(grievances.router, prefix=prefix)
+    app.include_router(verify.router, prefix=prefix)
+    app.include_router(eligibility.router, prefix=prefix)
+    app.include_router(audit.router, prefix=prefix)
 
 
     upload_dir = Path(settings.UPLOAD_DIR)

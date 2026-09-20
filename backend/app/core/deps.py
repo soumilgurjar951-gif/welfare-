@@ -7,7 +7,9 @@ from sqlalchemy.orm import Session
 from app.core.security import decode_token
 from app.crud.user import get_user_by_id
 from app.db.session import get_db_session
-from app.models.user import User, UserRole
+from app.models.user import READ_ROLES, User, UserRole
+
+OFFICER_ROLES: set[str] = {"admin", "welfare_officer", "collector", "sys_admin"}
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -44,7 +46,22 @@ def get_current_user(
 
 
 def get_current_admin(current: User = Depends(get_current_user)) -> User:
-    """Role gate: only users with role=admin may access /api/admin/*."""
-    if current.role != UserRole.admin:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+    """Decision gate: admin + welfare_officer + collector + sys_admin (PRD §8 hard rule).
+
+    Auditors / data officers / hospital partners are read-only and get 403 here.
+    """
+    if current.role.value not in OFFICER_ROLES:
+        if current.role.value == "hospital_partner":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Hospital partners are limited to authorized FHIR exchange only",
+            )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Officer access required")
+    return current
+
+
+def get_current_officer_reader(current: User = Depends(get_current_user)) -> User:
+    """Read gate: decision roles + data_officer + auditor (PRD least privilege)."""
+    if current.role.value not in READ_ROLES:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Officer access required")
     return current

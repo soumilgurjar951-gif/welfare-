@@ -17,7 +17,8 @@ interface AuthCtx {
   ready: boolean;
   citizenLogin: (identifier: string, password: string) => Promise<void>;
   citizenLogout: () => void;
-  adminLogin: (email: string, password: string) => Promise<void>;
+  adminLogin: (email: string, password: string) => Promise<{ mfaRequired: boolean; preToken: string | null }>;
+  adminMfaVerify: (preToken: string, code: string) => Promise<void>;
   adminLogout: () => void;
   refreshCitizen: (updatedUser?: User) => Promise<void>;
 }
@@ -81,13 +82,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const adminLogin = useCallback(async (email: string, password: string) => {
-    const { access_token } = await api.adminLogin(email, password);
+    const res = await api.adminLogin(email, password);
+    if (res.mfa_required) {
+      // Step-up: session is NOT stored until the TOTP second factor verifies.
+      return { mfaRequired: true as const, preToken: res.pre_token };
+    }
+    const access_token = res.access_token!;
+    window.localStorage.setItem(ADMIN_KEY, access_token);
+    const user = await api.adminMe(access_token);
+    setAdmin({ user, token: access_token });
+    return { mfaRequired: false as const, preToken: null };
+  }, []);
+
+  const adminMfaVerify = useCallback(async (preToken: string, code: string) => {
+    const { access_token } = await api.mfaVerify(preToken, code);
     window.localStorage.setItem(ADMIN_KEY, access_token);
     const user = await api.adminMe(access_token);
     setAdmin({ user, token: access_token });
   }, []);
 
   const adminLogout = useCallback(() => {
+    const t = load(ADMIN_KEY);
+    if (t) api.logout(t).catch(() => undefined); // best-effort server revocation (PRD §13)
     window.localStorage.removeItem(ADMIN_KEY);
     setAdmin({ user: null, token: null });
   }, []);
@@ -108,8 +124,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ citizen, admin, ready, citizenLogin, citizenLogout, adminLogin, adminLogout, refreshCitizen }),
-    [citizen, admin, ready, citizenLogin, citizenLogout, adminLogin, adminLogout, refreshCitizen],
+    () => ({ citizen, admin, ready, citizenLogin, citizenLogout, adminLogin, adminMfaVerify, adminLogout, refreshCitizen }),
+    [citizen, admin, ready, citizenLogin, citizenLogout, adminLogin, adminMfaVerify, adminLogout, refreshCitizen],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

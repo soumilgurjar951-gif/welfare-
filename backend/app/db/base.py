@@ -8,4 +8,4 @@ class Base(DeclarativeBase):
 
 
 # Import models here so Alembic autogenerate sees every table.
-from app.models import admin_log, application, document, scheme, user  # noqa: E402,F401
+from app.models import admin_log, application, document, gap_case, grievance, scheme, user  # noqa: E402,F401

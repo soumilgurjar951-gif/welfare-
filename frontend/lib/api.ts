@@ -109,6 +109,7 @@ export interface User {
   address: string;
   dob: string;
   role: string;
+  mfa_enabled?: boolean;
   created_at: string;
 }
 
@@ -217,9 +218,23 @@ export const api = {
       json: { identifier, password },
     }),
   adminLogin: (email: string, password: string) =>
-    request<{ access_token: string }>("/api/auth/admin/login", {
-      method: "POST",
-      json: { email, password },
+    request<{ mfa_required: boolean; access_token: string | null; pre_token: string | null }>(
+      "/api/auth/admin/login", { method: "POST", json: { email, password } },
+    ),
+  /* ── Officer MFA (TOTP second factor) ── */
+  mfaSetup: (token: string) =>
+    request<{ otpauth_uri: string; manual_secret: string; issuer: string }>(
+      "/api/auth/admin/mfa/setup", { method: "POST", token },
+    ),
+  mfaEnable: (token: string, code: string) =>
+    request<{ enabled: boolean }>("/api/auth/admin/mfa/enable", { method: "POST", token, json: { code } }),
+  mfaDisable: (token: string, password: string) =>
+    request<{ enabled: boolean }>("/api/auth/admin/mfa/disable", { method: "POST", token, json: { password } }),
+  mfaStatus: (token: string, signal?: AbortSignal) =>
+    request<{ enabled: boolean }>("/api/auth/admin/mfa/status", { token, signal }),
+  mfaVerify: (preToken: string, code: string) =>
+    request<{ access_token: string }>("/api/auth/admin/mfa/verify", {
+      method: "POST", json: { pre_token: preToken, code },
     }),
   me: (token: string, signal?: AbortSignal) =>
     request<User>("/api/auth/me", { token, signal, cacheKey: `me:${token}`, cacheTtl: TTL_SHORT }),
@@ -246,6 +261,10 @@ export const api = {
     request<{ total_applications: number; approved: number; total_disbursed: number; active_schemes: number }>(
       "/api/stats/public",
       { signal, cacheKey: "publicStats", cacheTtl: TTL_SHORT },
+    ),
+  runtimeVersions: (signal?: AbortSignal) =>
+    request<{ service: string; api_version: string; environment: string; python: string; fastapi: string; interpreter: string; database: string }>(
+      "/api/stats/version", { signal },
     ),
 
   /* ── Citizen ── */
@@ -342,4 +361,272 @@ export const api = {
     return `${API_BASE}/api/admin/applications/export?${q.toString()}`;
   },
   uploadUrl: (filePath: string) => `${API_BASE}/${filePath.replace(/^\//, "")}`,
+
+  /* ── PRD: Gap Cases (AI flags; officers decide) ── */
+  gapCases: (
+    token: string,
+    params: { label?: string; status?: string; district?: string; min_priority?: number; search?: string; page?: number; page_size?: number },
+    signal?: AbortSignal,
+  ) => {
+    const q = new URLSearchParams();
+    if (params.label) q.set("label", params.label);
+    if (params.status) q.set("status", params.status);
+    if (params.district) q.set("district", params.district);
+    if (params.min_priority !== undefined) q.set("min_priority", String(params.min_priority));
+    if (params.search) q.set("search", params.search);
+    q.set("page", String(params.page ?? 1));
+    q.set("page_size", String(params.page_size ?? 20));
+    const qs = q.toString();
+    return request<PagedGaps>(`/api/gap-cases?${qs}`, {
+      token, signal, cacheKey: `gaps:${token}:${qs}`, cacheTtl: TTL_SHORT,
+    });
+  },
+  gapDetail: (token: string, id: number, signal?: AbortSignal) =>
+    request<GapCase>(`/api/gap-cases/${id}`, {
+      token, signal, cacheKey: `gap:${token}:${id}`, cacheTtl: TTL_SHORT,
+    }),
+  gapVerify: (token: string, id: number, decision_reason: string, assignment?: string) => {
+    cacheBust(`gap:${token}:${id}`); cacheBust(`gaps:${token}`);
+    return request<GapCase>(`/api/gap-cases/${id}/verify`, {
+      method: "POST", token, json: { decision_reason, assignment: assignment ?? null },
+    });
+  },
+  gapFalsePositive: (token: string, id: number, decision_reason: string) => {
+    cacheBust(`gap:${token}:${id}`); cacheBust(`gaps:${token}`);
+    return request<GapCase>(`/api/gap-cases/${id}/false-positive`, {
+      method: "POST", token, json: { decision_reason },
+    });
+  },
+  gapRequestInfo: (token: string, id: number, decision_reason: string, assignment?: string) => {
+    cacheBust(`gap:${token}:${id}`); cacheBust(`gaps:${token}`);
+    return request<GapCase>(`/api/gap-cases/${id}/request-info`, {
+      method: "POST", token, json: { decision_reason, assignment: assignment ?? null },
+    });
+  },
+
+  /* ── PRD: Analytics + Demo + Reports ── */
+  analyticsSummary: (token: string, signal?: AbortSignal) =>
+    request<AnalyticsSummary>(`/api/analytics/summary`, {
+      token, signal, cacheKey: `analytics:${token}`, cacheTtl: TTL_SHORT,
+    }),
+  analyticsGeography: (token: string, signal?: AbortSignal) =>
+    request<{ villages: { village: string; gaps: number; max_priority: number; level: string }[] }>(
+      `/api/analytics/geography`, { token, signal, cacheKey: `geo:${token}`, cacheTtl: TTL_SHORT },
+    ),
+  demoWalkthrough: (token: string, signal?: AbortSignal) =>
+    request<DemoStep[]>(`/api/demo/walkthrough`, {
+      token, signal, cacheKey: `demo:${token}`, cacheTtl: TTL_SHORT,
+    }),
+  demoRun: (token: string) => {
+    cacheBust(`gaps:${token}`); cacheBust(`analytics:${token}`); cacheBust(`demo:${token}`);
+    return request<{ steps: DemoStep[]; created: number; total_gaps: number; message: string }>(
+      `/api/demo/run`, { method: "POST", token },
+    );
+  },
+  actionMemo: (token: string, id: number) =>
+    request<ActionMemo>(`/api/reports/action-memo/${id}`, { token }),
+  /* ── QR memo verification (public, no auth) ── */
+  verifyMemo: (code: string, signal?: AbortSignal) =>
+    request<MemoVerification>(`/api/verify/memo/${encodeURIComponent(code.trim())}`, { signal }),
+  verifyUrlFor: (code: string) =>
+    (typeof window !== "undefined" ? window.location.origin : "") + `/verify/${encodeURIComponent(code.trim())}`,
+  /* ── Eligibility Finder (public, no auth) ── */
+  eligibilityCheck: (profile: EligibilityProfile, signal?: AbortSignal) =>
+    request<EligibilityResult>(`/api/eligibility/check`, { method: "POST", json: profile, signal }),
+  /* ── Tamper-evident audit trail (officer) ── */
+  auditEvents: (token: string, limit = 100, signal?: AbortSignal) =>
+    request<AuditEvent[]>(`/api/audit/events?limit=${limit}`, {
+      token, signal, cacheKey: `audit:${token}`, cacheTtl: TTL_SHORT,
+    }),
+  auditVerify: (token: string, signal?: AbortSignal) =>
+    request<ChainReport>(`/api/audit/verify`, { token, signal }),
+  /* ── Grievance redressal ── */
+  fileGrievance: (token: string, json: { category: string; subject: string; description?: string; application_id?: number | null }) => {
+    cacheBust(`myGriev:`);
+    return request<Grievance>(`/api/grievances`, { method: "POST", token, json });
+  },
+  myGrievances: (token: string, signal?: AbortSignal) =>
+    request<Grievance[]>(`/api/grievances/me`, {
+      token, signal, cacheKey: `myGriev:${token}`, cacheTtl: TTL_SHORT,
+    }),
+  closeGrievance: (token: string, id: number) => {
+    cacheBust(`myGriev:${token}`);
+    return request<Grievance>(`/api/grievances/${id}/close`, { method: "PATCH", token });
+  },
+  officerGrievances: (token: string, status?: string, signal?: AbortSignal) => {
+    const qs = status ? `?status=${encodeURIComponent(status)}` : "";
+    return request<Grievance[]>(`/api/grievances${qs}`, {
+      token, signal, cacheKey: `offGriev:${token}:${status ?? "all"}`, cacheTtl: TTL_SHORT,
+    });
+  },
+  respondGrievance: (token: string, id: number, response: string, resolve: boolean) => {
+    cacheBust(`offGriev:${token}`);
+    return request<Grievance>(`/api/grievances/${id}/respond`, {
+      method: "PATCH", token, json: { response, resolve },
+    });
+  },
+  gapExportUrl: (params: { status?: string; district?: string }) => {
+    const q = new URLSearchParams();
+    if (params.status) q.set("status", params.status);
+    if (params.district) q.set("district", params.district);
+    return `${API_BASE}/api/reports/gap-cases.csv?${q.toString()}`;
+  },
+  refresh: (token: string) =>
+    request<{ access_token: string }>(`/api/auth/refresh`, { method: "POST", token }),
+  logout: (token: string) =>
+    request<{ message: string }>(`/api/auth/logout`, { method: "POST", token }),
 };
+
+export interface GapCase {
+  id: number;
+  scheme_id: number;
+  scheme_name: string | null;
+  citizen_name: string;
+  aadhaar_masked: string | null;
+  district: string;
+  block: string;
+  village: string;
+  label: string;
+  confidence: number;
+  priority: number;
+  explanation: string;
+  evidence: { source: string; record: string; match_score: number }[] | null;
+  eligibility_signals: Record<string, unknown> | null;
+  rule_version: string;
+  model_version: string;
+  anomaly: Record<string, unknown> | null;
+  root_cause: string | null;
+  top_factors: string[] | null;
+  data_freshness: string | null;
+  provenance: { sources: string[]; demo: boolean } | null;
+  limitations: string | null;
+  status: string;
+  assignment: string | null;
+  sla_due: string | null;
+  decision_reason: string | null;
+  decided_by: string | null;
+  decided_at: string | null;
+  verification_history: { action: string; by: string; role: string; reason: string; at: string }[] | null;
+  tracking_code: string | null;
+  created_at: string;
+}
+
+export interface PagedGaps {
+  total: number;
+  page: number;
+  page_size: number;
+  ai_candidates: number;
+  officer_verified: number;
+  items: GapCase[];
+}
+
+export interface AnalyticsSummary {
+  total_gaps: number;
+  open: number;
+  verified: number;
+  false_positive: number;
+  needs_more_data: number;
+  high_priority: number;
+  by_label: Record<string, number>;
+  by_scheme: Record<string, number>;
+  by_district: Record<string, number>;
+  resolution_rate: number;
+  ai_candidates: number;
+  officer_verified_outcomes: number;
+}
+
+export interface DemoStep {
+  step: number;
+  activity: string;
+  requirement: string;
+  live_count: number | null;
+}
+
+export interface ActionMemo {
+  tracking_code: string;
+  verify_url: string | null;
+  subject: string;
+  body: string;
+  decided_by: string | null;
+  decided_at: string | null;
+  watermark: string;
+}
+
+export interface MemoVerification {
+  valid: boolean;
+  tracking_code: string;
+  scheme: string | null;
+  status: string | null;
+  ai_label: string | null;
+  district: string | null;
+  decided_at: string | null;
+  issued_by_masked: string | null;
+  message: string;
+}
+
+export interface EligibilityProfile {
+  age?: number | null;
+  annual_income?: number | null;
+  land_acres?: number | null;
+  occupation?: string | null;
+  category?: string | null;
+  is_student?: boolean;
+  last_marks_pct?: number | null;
+  own_pucca_house?: boolean | null;
+  has_ration_card?: boolean | null;
+  aadhaar_bank_linked?: boolean | null;
+}
+
+export interface SchemeMatch {
+  scheme: string;
+  score: number;
+  verdict: string;
+  matched: string[];
+  missing: { criterion: string; what_to_do: string }[];
+}
+
+export interface EligibilityResult {
+  matches: SchemeMatch[];
+  note: string;
+}
+
+export interface AuditEvent {
+  id: number;
+  actor_email: string;
+  actor_role: string;
+  action: string;
+  entity_type: string;
+  entity_id: string;
+  details: Record<string, unknown> | null;
+  prev_hash: string | null;
+  entry_hash: string | null;
+  created_at: string;
+}
+
+export interface ChainReport {
+  ok: boolean;
+  algorithm: string;
+  checked: number;
+  total: number;
+  broken_at: number | null;
+  message: string;
+}
+
+export interface Grievance {
+  id: number;
+  citizen_id: number;
+  citizen_name: string | null;
+  citizen_phone: string | null;
+  category: string;
+  subject: string;
+  description: string;
+  application_id: number | null;
+  status: string;
+  officer_response: string | null;
+  responded_by: string | null;
+  sla_due: string;
+  escalated_at: string | null;
+  is_overdue: boolean;
+  created_at: string;
+  updated_at: string;
+}

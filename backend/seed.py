@@ -1,6 +1,6 @@
-"""Idempotent seed: 5 schemes + 1 default admin user."""
+"""Idempotent seed: 5 schemes + 1 default admin user + demo grievances."""
 
-from datetime import date
+from datetime import date, datetime, timedelta
 
 from app.core.config import settings
 from app.core.security import get_password_hash
@@ -48,11 +48,18 @@ def seed() -> None:
         import sqlite3
         conn = sqlite3.connect("scheme_sync.db")
         cursor = conn.cursor()
-        try:
-            cursor.execute("ALTER TABLE schemes ADD COLUMN required_documents TEXT")
-            conn.commit()
-        except sqlite3.OperationalError:
-            pass
+        for ddl in (
+            "ALTER TABLE schemes ADD COLUMN required_documents TEXT",
+            "ALTER TABLE audit_events ADD COLUMN prev_hash VARCHAR(64)",
+            "ALTER TABLE audit_events ADD COLUMN entry_hash VARCHAR(64)",
+            "ALTER TABLE users ADD COLUMN mfa_secret VARCHAR(64)",
+            "ALTER TABLE users ADD COLUMN mfa_enabled BOOLEAN NOT NULL DEFAULT 0",
+        ):
+            try:
+                cursor.execute(ddl)
+                conn.commit()
+            except sqlite3.OperationalError:
+                pass
         conn.close()
     except Exception as e:
         print(f"Migration notice: {e}")
@@ -113,6 +120,31 @@ def seed() -> None:
         print("Seed complete: 5 schemes + admin + demo citizen ensured.")
         print(f"Admin   -> email: {admin_email} | password: {settings.SEED_ADMIN_PASSWORD}")
         print(f"Citizen -> email/phone: {citizen_email} / {citizen_phone} | password: Citizen@123")
+
+        # ── Demo grievances (idempotent; one overdue to showcase escalation) ──
+        from app.models.grievance import SLA_DAYS, Grievance, GrievanceStatus
+        citizen = db.query(User).filter(User.email == citizen_email).first()
+        if citizen and not db.query(Grievance).first():
+            now = datetime.now()
+            db.add_all([
+                Grievance(
+                    citizen_id=citizen.id, category="delay",
+                    subject="PMAY application pending for 2 months",
+                    description="Applied for PM Awas Yojana in July; status still shows pending.",
+                    status=GrievanceStatus.open,
+                    sla_due=now + timedelta(days=SLA_DAYS),
+                ),
+                Grievance(
+                    citizen_id=citizen.id, category="payment",
+                    subject="PM-Kisan installment not credited",
+                    description="Approved installment has not reached the bank account.",
+                    status=GrievanceStatus.open,
+                    sla_due=now - timedelta(days=2),  # overdue -> auto-escalates on officer read
+                    created_at=now - timedelta(days=SLA_DAYS + 2),
+                ),
+            ])
+            db.commit()
+            print("Seed complete: 2 demo grievances ensured (1 overdue for escalation demo).")
     finally:
         db.close()
 
